@@ -1,0 +1,8 @@
+{
+  "name": "Mobile Studio",
+  "version": "0.2.0",
+  "channel": "dev",
+  "entry": "dist/MobileStudio.lua",
+  "minimumBootstrap": 1,
+  "notes": "Responsive viewport-first shell with live Explorer, selection, basic properties, create/duplicate/delete and undo/redo."
+}
