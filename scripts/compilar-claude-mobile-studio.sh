@@ -7,5 +7,7 @@ base64 -d <<'CMS_PAYLOAD' | tar -xJ
 CMS_PAYLOAD
 
 if ! command -v gradle >/dev/null; then echo "Gradle ausente; instale Gradle 8.11.1 e Android SDK 35." >&2; exit 1; fi
+sed -i 's/private static JSONObject arg(String type,String description){/private static JSONObject arg(String type,String description) throws JSONException {/' app/src/main/java/com/claudemobilestudio/app/AgentEngine.java
+sed -i 's/private JSONObject spec(String name,String desc,JSONObject props,JSONArray req){/private JSONObject spec(String name,String desc,JSONObject props,JSONArray req) throws JSONException {/' app/src/main/java/com/claudemobilestudio/app/AgentEngine.java
 gradle --no-daemon :app:assembleDebug
 echo "APK: $(pwd)/app/build/outputs/apk/debug/app-debug.apk"
