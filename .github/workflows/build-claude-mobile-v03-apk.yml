@@ -35,6 +35,20 @@ jobs:
           mkdir -p build-v03
           base64 -d ClaudeMobileStudio-v03.tar.xz.b64 | tar -xJ -C build-v03
           test -e build-v03/app/build.gradle
+      - name: Repair invalid multiline Java string
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path("build-v03/app/src/main/java/com/claudemobilestudio/app/MainActivity.java")
+          text=p.read_text(encoding="utf-8")
+          original="900 KB cada." + chr(10) + "Arquivos como"
+          fixed="900 KB cada." + chr(92) + "nArquivos como"
+          if original not in text:
+              print("Already patched, or source has changed")
+          else:
+              p.write_text(text.replace(original,fixed),encoding="utf-8")
+              print("Fixed Java string literal")
+          PY
       - name: Compile
         working-directory: build-v03
         run: gradle --no-daemon :app:assembleDebug --stacktrace
