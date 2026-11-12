@@ -22,13 +22,17 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
-      - name: Use preinstalled Android SDK
+      - name: Locate Android SDK and install packages
         shell: bash
         run: |
-          echo "ANDROID_HOME=${ANDROID_HOME:-/usr/local/lib/android/sdk}" >> "$GITHUB_ENV"
-          echo "ANDROID_SDK_ROOT=${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}" >> "$GITHUB_ENV"
-          command -v sdkmanager
-          sdkmanager 'platforms;android-35' 'build-tools;35.0.0'
+          SDK_HOME="${ANDROID_HOME:-/usr/local/lib/android/sdk}"
+          echo "ANDROID_HOME=$SDK_HOME" >> "$GITHUB_ENV"
+          echo "ANDROID_SDK_ROOT=$SDK_HOME" >> "$GITHUB_ENV"
+          TOOL="$(find "$SDK_HOME/cmdline-tools" -type f -name sdkmanager -print -quit)"
+          if [ -z "$TOOL" ]; then echo "Android sdkmanager not found under $SDK_HOME"; exit 1; fi
+          echo "Using sdkmanager: $TOOL"
+          yes | "$TOOL" --sdk_root="$SDK_HOME" --licenses >/dev/null || true
+          "$TOOL" --sdk_root="$SDK_HOME" 'platforms;android-35' 'build-tools;35.0.0'
       - name: Set up Gradle 8.11.1
         uses: gradle/actions/setup-gradle@v4
         with:
