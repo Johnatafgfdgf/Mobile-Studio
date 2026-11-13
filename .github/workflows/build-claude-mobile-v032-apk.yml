@@ -1,0 +1,69 @@
+name: Build Claude Mobile Studio v0.3.2 APK
+on:
+  push:
+    branches: [build/claude-mobile-studio-v032-20261113]
+    paths:
+      - 'scripts/patch_v032.py'
+      - 'scripts/StreamDecoder_v032.java'
+      - '.github/workflows/build-claude-mobile-v032-apk.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  android:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Install Android SDK platform
+        shell: bash
+        run: |
+          SDK_HOME="${ANDROID_HOME:-/usr/local/lib/android/sdk}"
+          echo "ANDROID_HOME=$SDK_HOME" >> "$GITHUB_ENV"
+          echo "ANDROID_SDK_ROOT=$SDK_HOME" >> "$GITHUB_ENV"
+          TOOL="$(find "$SDK_HOME/cmdline-tools" -type f -name sdkmanager -print -quit)"
+          test -n "$TOOL"
+          yes | "$TOOL" --sdk_root="$SDK_HOME" --licenses >/dev/null || true
+          "$TOOL" --sdk_root="$SDK_HOME" 'platforms;android-35' 'build-tools;35.0.0'
+      - name: Setup Gradle 8.11.1
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.11.1'
+      - name: Unpack base v0.3
+        run: |
+          mkdir -p build-v03
+          base64 -d ClaudeMobileStudio-v03.tar.xz.b64 | tar -xJ -C build-v03
+      - name: Repair multiline string from base
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('build-v03/app/src/main/java/com/claudemobilestudio/app/MainActivity.java')
+          s=p.read_text()
+          s=s.replace("900 KB cada." + chr(10) + "Arquivos como", "900 KB cada." + chr(92) + "nArquivos como")
+          p.write_text(s)
+          PY
+      - name: Apply v0.3.1 patches
+        run: python3 scripts/patch_v031.py
+      - name: Apply v0.3.2 streaming and cost protection
+        run: python3 scripts/patch_v032.py
+      - name: Diff utility regression tests
+        run: |
+          mkdir -p /tmp/cms-test
+          javac -d /tmp/cms-test build-v03/app/src/main/java/com/claudemobilestudio/app/DiffUtil.java build-v03/tests/DiffUtilTest.java
+          java -cp /tmp/cms-test com.claudemobilestudio.app.DiffUtilTest
+      - name: Compile APK
+        working-directory: build-v03
+        run: gradle --no-daemon :app:assembleDebug --stacktrace
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: ClaudeMobileStudio-v032-debug-apk
+          path: build-v03/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
