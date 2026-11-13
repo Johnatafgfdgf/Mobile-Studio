@@ -18,7 +18,7 @@ edit("AgentEngine.java", [
      '    private boolean pendingTask=false;\n    private boolean connectionChecked=false;'),
     ('        messages.put(new JSONObject().put("role","user").put("content",userBlocks));',
      '        preflight(progress);\n        messages.put(new JSONObject().put("role","user").put("content",userBlocks));'),
-    ('        progress.post("Retomando do último ponto salvo, sem repetir a leitura de arquivos já concluída");',
+    ('        progress.post("Retomando a tarefa com as ferramentas já concluídas");',
      '        preflight(progress);\n        progress.post("Retomando a tarefa. Uma nova chamada pode consumir tokens.");'),
     ('        for(int round=0;round<12;round++){\n            progress.post("Consultando " + model + " · etapa " + (round+1) + "/12");',
      '        // Maximum two paid calls per user action; more require explicit Resume.\n        for(int round=0;round<2;round++){\n            progress.post("Consultando " + model + " · chamada " + (round+1) + " de 2");'),
